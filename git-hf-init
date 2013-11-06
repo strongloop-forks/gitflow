@@ -77,16 +77,16 @@ cmd_default() {
         warn "Using default branch names."
     fi
 
-	# add a master branch if no such branch exists yet
-	local master_branch
-	if hubflow_has_master_configured && ! flag force; then
-		master_branch=$(git config --get hubflow.branch.master)
+	# add a stable branch if no such branch exists yet
+	local stable_branch
+	if hubflow_has_stable_configured && ! flag force; then
+		stable_branch=$(git config --get hubflow.branch.stable)
 	else
 		# Two cases are distinguished:
 		# 1. A fresh git repo (without any branches)
-		#    We will create a new master/develop branch for the user
+		#    We will create a new stable/master branch for the user
 		# 2. Some branches do already exist
-		#    We will disallow creation of new master/develop branches and
+		#    We will disallow creation of new stable/master branches and
 		#    rather allow to use existing branches for hubflow.
 		local default_suggestion
 		local should_check_existence
@@ -94,7 +94,7 @@ cmd_default() {
 		if [ "$branch_count" -eq 0 ]; then
 			echo "No branches exist yet. Base branches must be created now."
 			should_check_existence=NO
-			default_suggestion=$(git config --get hubflow.branch.master || echo master)
+			default_suggestion=$(git config --get hubflow.branch.stable || echo stable)
 		else
 			echo
 			echo "Which branch should be used for tracking production releases?"
@@ -102,8 +102,8 @@ cmd_default() {
 
 			should_check_existence=YES
 			default_suggestion=
-			for guess in $(git config --get hubflow.branch.master) \
-			             'production' 'main' 'master'; do
+			for guess in $(git config --get hubflow.branch.stable) \
+			             'production' 'main' 'stable'; do
 				if git_local_branch_exists "$guess"; then
 					default_suggestion="$guess"
 					break
@@ -111,8 +111,8 @@ cmd_default() {
 			done
 
 			if [ -z "$default_suggestion" ] ; then
-				for guess in $(git config --get hubflow.branch.master) \
-				             'production' 'main' 'master'; do
+				for guess in $(git config --get hubflow.branch.stable) \
+				             'production' 'main' 'stable'; do
 					if git_remote_branch_exists "origin/$guess"; then
 						default_suggestion="$guess"
 						break
@@ -120,9 +120,9 @@ cmd_default() {
 				done
 			fi
 
-			# if we have no default at this point, use 'master'
+			# if we have no default at this point, use 'stable'
 			if [ -z "$default_suggestion" ] ; then
-				default_suggestion="master"
+				default_suggestion="stable"
 				should_check_existence="NO"
 			fi
 		fi
@@ -133,46 +133,46 @@ cmd_default() {
 		else
 			printf "\n"
 		fi
-		master_branch=${answer:-$default_suggestion}
+		stable_branch=${answer:-$default_suggestion}
 
 		# check existence in case of an already existing repo
 		if [ "$should_check_existence" = "YES" ]; then
 			# if no local branch exists and a remote branch of the same
-			# name exists, checkout that branch and use it for master
-			if ! git_local_branch_exists "$master_branch" && \
-				git_remote_branch_exists "origin/$master_branch"; then
-				git branch "$master_branch" "origin/$master_branch" >/dev/null 2>&1
-			elif ! git_local_branch_exists "$master_branch"; then
-				die "Local branch '$master_branch' does not exist."
+			# name exists, checkout that branch and use it for stable
+			if ! git_local_branch_exists "$stable_branch" && \
+				git_remote_branch_exists "origin/$stable_branch"; then
+				git branch "$stable_branch" "origin/$stable_branch" >/dev/null 2>&1
+			elif ! git_local_branch_exists "$stable_branch"; then
+				die "Local branch '$stable_branch' does not exist."
 			fi
 		fi
 
-		# store the name of the master branch
-		git config hubflow.branch.master "$master_branch"
+		# store the name of the stable branch
+		git config hubflow.branch.stable "$stable_branch"
 	fi
 
-	# add a develop branch if no such branch exists yet
-	local develop_branch
-	if hubflow_has_develop_configured && ! flag force; then
-		develop_branch=$(git config --get hubflow.branch.develop)
+	# add a master branch if no such branch exists yet
+	local master_branch
+	if hubflow_has_master_configured && ! flag force; then
+		master_branch=$(git config --get hubflow.branch.master)
 	else
-		# Again, the same two cases as with the master selection are
+		# Again, the same two cases as with the stable selection are
 		# considered (fresh repo or repo that contains branches)
 		local default_suggestion
 		local should_check_existence
-		branch_count=$(git_local_branches | grep -v "^${master_branch}\$" | wc -l)
+		branch_count=$(git_local_branches | grep -v "^${stable_branch}\$" | wc -l)
 		if [ "$branch_count" -eq 0 ]; then
 			should_check_existence=NO
-			default_suggestion=$(git config --get hubflow.branch.develop || echo develop)
+			default_suggestion=$(git config --get hubflow.branch.master || echo master)
 		else
 			echo
 			echo "Which branch should be used for integration of the \"next release\"?"
-			git_local_branches | grep -v "^${master_branch}\$" | sed 's/^.*$/   - &/g'
+			git_local_branches | grep -v "^${stable_branch}\$" | sed 's/^.*$/   - &/g'
 
 			should_check_existence=YES
 			default_suggestion=
-			for guess in $(git config --get hubflow.branch.develop) \
-			             'develop' 'int' 'integration' 'master'; do
+			for guess in $(git config --get hubflow.branch.master) \
+			             'master' 'int' 'integration' 'stable'; do
 				if git_local_branch_exists "$guess"; then
 					default_suggestion="$guess"
 					break
@@ -180,8 +180,8 @@ cmd_default() {
 			done
 
 			if [ -z "$default_suggestion" ]; then
-				for guess in $(git config --get hubflow.branch.develop) \
-				             'develop' 'int' 'integration' 'master'; do
+				for guess in $(git config --get hubflow.branch.master) \
+				             'master' 'int' 'integration' 'stable'; do
 					if git_remote_branch_exists "origin/$guess"; then
 						default_suggestion="$guess"
 						break
@@ -190,26 +190,26 @@ cmd_default() {
 			fi
 		fi
 
-		printf "Branch name for \"next release\" development: [$default_suggestion] "
+		printf "Branch name for \"next release\" masterment: [$default_suggestion] "
 		if flag ask; then
 			read answer
 		else
 			printf "\n"
 		fi
-		develop_branch=${answer:-$default_suggestion}
+		master_branch=${answer:-$default_suggestion}
 
-		if [ "$master_branch" = "$develop_branch" ]; then
+		if [ "$stable_branch" = "$master_branch" ]; then
 			die "Production and integration branches should differ."
 		fi
 
 		# check existence in case of an already existing repo
 		if [ "$should_check_existence" = "YES" ]; then
-			git_local_branch_exists "$develop_branch" || \
-				die "Local branch '$develop_branch' does not exist."
+			git_local_branch_exists "$master_branch" || \
+				die "Local branch '$master_branch' does not exist."
 		fi
 
-		# store the name of the develop branch
-		git config hubflow.branch.develop "$develop_branch"
+		# store the name of the master branch
+		git config hubflow.branch.master "$master_branch"
 	fi
 
 	# Creation of HEAD
@@ -218,36 +218,36 @@ cmd_default() {
 	# it to be able to create new branches.
 	local created_hubflow_branch=0
 	if ! git rev-parse --quiet --verify HEAD >/dev/null 2>&1; then
-		git symbolic-ref HEAD "refs/heads/$master_branch"
+		git symbolic-ref HEAD "refs/heads/$stable_branch"
 		git commit --allow-empty --quiet -m "Initial commit"
 		created_hubflow_branch=1
 	fi
 
-	# Creation of master
+	# Creation of stable
 	# ------------------
-	# We cannot safely assume that the master branch actually exists. It will
+	# We cannot safely assume that the stable branch actually exists. It will
 	# exist nearly all of the time, but this deals with those rare occaisons
-	# when the master branch needs setting up
-	if ! git_local_branch_exists "$master_branch"; then
-		if git_remote_branch_exists "origin/$master_branch"; then
-			git branch "$develop_branch" "origin/$master_branch" >/dev/null 2>&1
+	# when the stable branch needs setting up
+	if ! git_local_branch_exists "$stable_branch"; then
+		if git_remote_branch_exists "origin/$stable_branch"; then
+			git branch "$master_branch" "origin/$stable_branch" >/dev/null 2>&1
 		else
-			git branch --no-track "$master_branch"
+			git branch --no-track "$stable_branch"
 		fi
 		created_hubflow_branch=1
 	fi
 
-	# Creation of develop
+	# Creation of master
 	# -------------------
-	# The develop branch possibly does not exist yet.  This is the case when,
-	# in a git init'ed repo with one or more commits, master was picked as the
-	# default production branch and develop was "created".  We should create
-	# the develop branch now in that case (we base it on master, of course)
-	if ! git_local_branch_exists "$develop_branch"; then
-		if git_remote_branch_exists "origin/$develop_branch"; then
-			git branch "$develop_branch" "origin/$develop_branch" >/dev/null 2>&1
+	# The master branch possibly does not exist yet.  This is the case when,
+	# in a git init'ed repo with one or more commits, stable was picked as the
+	# default production branch and master was "created".  We should create
+	# the master branch now in that case (we base it on stable, of course)
+	if ! git_local_branch_exists "$master_branch"; then
+		if git_remote_branch_exists "origin/$master_branch"; then
+			git branch "$master_branch" "origin/$master_branch" >/dev/null 2>&1
 		else
-			git branch --no-track "$develop_branch" "$master_branch"
+			git branch --no-track "$master_branch" "$stable_branch"
 		fi
 		created_hubflow_branch=1
 	fi
@@ -255,9 +255,9 @@ cmd_default() {
 	# assert the hubflow repo has been correctly initialized
 	hubflow_is_initialized
 
-	# switch to develop branch if its newly created
+	# switch to master branch if its newly created
 	if [ $created_hubflow_branch -eq 1 ]; then
-		git checkout -q "$develop_branch"
+		git checkout -q "$master_branch"
 	fi
 
 	# finally, ask the user for naming conventions (branch and tag prefixes)
@@ -341,7 +341,7 @@ cmd_default() {
 		git config hubflow.prefix.versiontag "$prefix"
 	fi
 
-	# at this point, we should be on the develop branch, which may or
+	# at this point, we should be on the master branch, which may or
 	# may not exist at origin
 	#
         # Load the settings that were just written so that $ORIGIN,

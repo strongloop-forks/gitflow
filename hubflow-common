@@ -174,14 +174,14 @@ git_is_branch_merged_into() {
 #
 
 # check if this repo has been inited for hubflow
+hubflow_has_stable_configured() {
+	local stable=$(git config --get hubflow.branch.stable)
+	[ "$stable" != "" ] && git_local_branch_exists "$stable"
+}
+
 hubflow_has_master_configured() {
 	local master=$(git config --get hubflow.branch.master)
 	[ "$master" != "" ] && git_local_branch_exists "$master"
-}
-
-hubflow_has_develop_configured() {
-	local develop=$(git config --get hubflow.branch.develop)
-	[ "$develop" != "" ] && git_local_branch_exists "$develop"
 }
 
 hubflow_has_prefixes_configured() {
@@ -193,18 +193,18 @@ hubflow_has_prefixes_configured() {
 }
 
 hubflow_is_initialized() {
-	hubflow_has_master_configured                    && \
-	hubflow_has_develop_configured                   && \
-	[ "$(git config --get hubflow.branch.master)" !=    \
-	  "$(git config --get hubflow.branch.develop)" ] && \
+	hubflow_has_stable_configured                    && \
+	hubflow_has_master_configured                   && \
+	[ "$(git config --get hubflow.branch.stable)" !=    \
+	  "$(git config --get hubflow.branch.master)" ] && \
 	hubflow_has_prefixes_configured
 }
 
 # loading settings that can be overridden using git config
 hubflow_load_settings() {
 	export DOT_GIT_DIR=$(git rev-parse --git-dir 2>/dev/null)
+	export STABLE_BRANCH=$(git config --get hubflow.branch.stable)
 	export MASTER_BRANCH=$(git config --get hubflow.branch.master)
-	export DEVELOP_BRANCH=$(git config --get hubflow.branch.develop)
 	export ORIGIN=$(git config --get hubflow.origin || echo origin)
     export BRANCH=$(git_current_branch)
 }
@@ -366,23 +366,23 @@ hubflow_merge_latest_changes_from_origin() {
     # remember which branch is currently checked out
     hubflow_branch_push_current_branch
 
-    # merge the master branch first
-    # merge conflicts on master will be rare
+    # merge the stable branch first
+    # merge conflicts on stable will be rare
+    if has "$ORIGIN/$STABLE_BRANCH" $(git_remote_branches); then
+        hubflow_remote_merge_helper "$ORIGIN" "$STABLE_BRANCH" no_checkout_afterwards
+        git_compare_branches "$STABLE_BRANCH" "$ORIGIN/$STABLE_BRANCH"
+        if [[ $? -ne 0 ]] ; then
+            git push "$ORIGIN" "$STABLE_BRANCH" || die "Push to '$ORIGIN' failed"
+        fi
+    fi
+
+    # merge the master branch next
+    # merge conflicts on master are sadly more common
     if has "$ORIGIN/$MASTER_BRANCH" $(git_remote_branches); then
         hubflow_remote_merge_helper "$ORIGIN" "$MASTER_BRANCH" no_checkout_afterwards
         git_compare_branches "$MASTER_BRANCH" "$ORIGIN/$MASTER_BRANCH"
         if [[ $? -ne 0 ]] ; then
             git push "$ORIGIN" "$MASTER_BRANCH" || die "Push to '$ORIGIN' failed"
-        fi
-    fi
-
-    # merge the develop branch next
-    # merge conflicts on develop are sadly more common
-    if has "$ORIGIN/$DEVELOP_BRANCH" $(git_remote_branches); then
-        hubflow_remote_merge_helper "$ORIGIN" "$DEVELOP_BRANCH" no_checkout_afterwards
-        git_compare_branches "$DEVELOP_BRANCH" "$ORIGIN/$DEVELOP_BRANCH"
-        if [[ $? -ne 0 ]] ; then
-            git push "$ORIGIN" "$DEVELOP_BRANCH" || die "Push to '$ORIGIN' failed"
         fi
     fi
 

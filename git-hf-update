@@ -92,8 +92,8 @@ cmd_update() {
 	if flag prune ; then
 		echo "- Any branches that have been deleted at $ORIGIN have also been deleted from your local repository"
 	fi
+	echo "- Any changes from $ORIGIN/$STABLE_BRANCH have been merged into branch '$STABLE_BRANCH'"
 	echo "- Any changes from $ORIGIN/$MASTER_BRANCH have been merged into branch '$MASTER_BRANCH'"
-	echo "- Any changes from $ORIGIN/$DEVELOP_BRANCH have been merged into branch '$DEVELOP_BRANCH'"
 	echo "- Any resolved merge conflicts have been pushed back to $ORIGIN"
 	echo "- You are now on branch '$BRANCH'"
 }
