@@ -330,7 +330,7 @@ cmd_default() {
 
 	# Version tag prefix
 	if ! git config --get hubflow.prefix.versiontag >/dev/null 2>&1 || flag force; then
-		default_suggestion=$(git config --get hubflow.prefix.versiontag || echo "")
+		default_suggestion=$(git config --get hubflow.prefix.versiontag || echo "v")
 		printf "Version tag prefix? [$default_suggestion] "
 		if flag ask; then
 			read answer
