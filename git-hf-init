@@ -94,7 +94,7 @@ cmd_default() {
 		if [ "$branch_count" -eq 0 ]; then
 			echo "No branches exist yet. Base branches must be created now."
 			should_check_existence=NO
-			default_suggestion=$(git config --get hubflow.branch.master || echo master)
+			default_suggestion=$(git config --get hubflow.branch.master || echo production)
 		else
 			echo
 			echo "Which branch should be used for tracking production releases?"
@@ -122,7 +122,7 @@ cmd_default() {
 
 			# if we have no default at this point, use 'master'
 			if [ -z "$default_suggestion" ] ; then
-				default_suggestion="master"
+				default_suggestion="production"
 				should_check_existence="NO"
 			fi
 		fi
@@ -163,7 +163,7 @@ cmd_default() {
 		branch_count=$(git_local_branches | grep -v "^${master_branch}\$" | wc -l)
 		if [ "$branch_count" -eq 0 ]; then
 			should_check_existence=NO
-			default_suggestion=$(git config --get hubflow.branch.develop || echo develop)
+			default_suggestion=$(git config --get hubflow.branch.develop || echo master)
 		else
 			echo
 			echo "Which branch should be used for integration of the \"next release\"?"
