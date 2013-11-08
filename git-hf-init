@@ -103,7 +103,7 @@ cmd_default() {
 			should_check_existence=YES
 			default_suggestion=
 			for guess in $(git config --get hubflow.branch.master) \
-			             'production' 'main' 'master'; do
+			             'production' 'main'; do
 				if git_local_branch_exists "$guess"; then
 					default_suggestion="$guess"
 					break
@@ -112,7 +112,7 @@ cmd_default() {
 
 			if [ -z "$default_suggestion" ] ; then
 				for guess in $(git config --get hubflow.branch.master) \
-				             'production' 'main' 'master'; do
+				             'production' 'main'; do
 					if git_remote_branch_exists "origin/$guess"; then
 						default_suggestion="$guess"
 						break
