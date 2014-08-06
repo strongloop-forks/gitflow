@@ -253,7 +253,7 @@ cmd_finish() {
 	if ! git_is_branch_merged_into "$BRANCH" "$MASTER_BRANCH"; then
 		git checkout "$MASTER_BRANCH" || \
 		  die "Could not check out $MASTER_BRANCH."
-		git merge --no-ff -srecursive -Xtheirs "$BRANCH" || \
+		git merge --no-ff -srecursive -Xtheirs "$BRANCH" --no-edit || \
 		  die "There were merge conflicts."
 		  # TODO: What do we do now?
 	fi
@@ -268,7 +268,7 @@ cmd_finish() {
 			flag sign && opts="$opts -s"
 			[ "$FLAGS_signingkey" != "" ] && opts="$opts -u '$FLAGS_signingkey'"
 			[ "$FLAGS_message" != "" ] && opts="$opts -m '$FLAGS_message'"
-			eval git tag $opts "$tagname" || \
+			eval git tag $opts "$tagname" -m "$tagname" || \
 			die "Tagging failed. Please run finish again to retry."
 		fi
 	fi
@@ -284,7 +284,7 @@ cmd_finish() {
 			# branch - and the new tag (if provided) - a parent of the development
 			# branch, which in turn lets you use 'git describe' on either branch
 			if noflag notag; then
-				git merge --no-ff "$tagname" || \
+				git merge --no-ff "$tagname" --no-edit || \
 					die "There were merge conflicts."
 			else
 				git merge --no-ff "$MASTER_BRANCH" || \
