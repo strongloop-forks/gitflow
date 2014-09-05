@@ -187,6 +187,10 @@ cmd_start() {
 	# push it back up to remote repo
 	hubflow_push_latest_changes_to_origin
 
+	npm version --git-tag-version=false "$VERSION"
+	git-changelog
+	git add package.json CHANGES.md; git commit -m "v$VERSION"
+
 	echo
 	echo "Summary of actions:"
 	echo "- A new branch '$BRANCH' was created, based on '$BASE'"
